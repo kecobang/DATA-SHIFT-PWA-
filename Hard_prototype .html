@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat – iPhone</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #0b0b0b; color: #f0f0f0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    input, textarea, button { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #2a2a2e; background: #18181b; color: #fff; font-size: 1rem; }
+    button { background: #7c3aed; border: none; font-weight: bold; cursor: pointer; }
+    button:hover { background: #6d28d9; }
+    .output { background: #18181b; padding: 16px; border-radius: 12px; min-height: 120px; white-space: pre-wrap; border: 1px solid #2a2a2e; margin-top: 12px; }
+    .key-hint { color: #facc15; font-size: 0.8rem; margin-top: -5px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="color:#7c3aed;">🧠 AI Chat</h1>
+    <p style="color:#888;">Runs entirely in your browser – no server needed</p>
+
+    <input id="apiKey" type="password" placeholder="Hugging Face API Key" style="margin-bottom:2px;">
+    <p class="key-hint">Get one for free at huggingface.co/settings/tokens</p>
+
+    <select id="modelSelect">
+      <option value="microsoft/DialoGPT-medium">DialoGPT (chat)</option>
+      <option value="google/flan-t5-base">Flan-T5 (general)</option>
+      <option value="EleutherAI/gpt-neo-125M">GPT-Neo (text)</option>
+    </select>
+
+    <textarea id="prompt" rows="3" placeholder="Type your prompt...">Explain AI in one sentence.</textarea>
+    <button onclick="send()">⚡ Send</button>
+    <div id="output" class="output">Ready.</div>
+    <p style="color:#444; font-size:0.8rem; margin-top:10px;">Free – 30,000 requests/month</p>
+  </div>
+
+  <script>
+    async function send() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (!key) { alert('Please enter your API key'); return; }
+
+      const model = document.getElementById('modelSelect').value;
+      const prompt = document.getElementById('prompt').value.trim();
+      if (!prompt) return;
+
+      const out = document.getElementById('output');
+      out.textContent = '⏳ Thinking...';
+
+      try {
+        const res = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputs: prompt })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        // Extract generated text safely
+        let result = data.generated_text || data[0]?.generated_text || JSON.stringify(data);
+        out.textContent = result;
+      } catch (e) {
+        out.textContent = '❌ ' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
